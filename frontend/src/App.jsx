@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {Routes, Route} from "react-router-dom";
+
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+import HomePage from "./pages/HomePage";
+import SignUpPage from "./pages/SignUpPage";
+import LoginPage from "./pages/LoginPage";
+import AdminPage from "./pages/AdminPage";
+import TestPage from "./pages/TestPage";
+import GetCaseDetailsPage from "./pages/GetCaseDetailsPage";
+import CaseDetailsPage from "./pages/CaseDetailsPage";
+import RegisterNewLegalCasePage from "./pages/RegisterNewLegalCasePage";
+import CaseDetailsComponent from "./components/CaseDetailsComponent";
+
+// import MixedSignUpComponent from "./components/MixedSignUpComponent";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="min-h-screen">
+        <Navbar />
+
+        <Routes>
+          <Route path="/" element={<HomePage />}></Route>
+          <Route path="/signup" element={<SignUpPage />}></Route>
+          <Route
+            path="/signup/:initialFormType"
+            element={<SignUpPage />}
+          ></Route>
+
+          <Route path="/login/:initialFormType" element={<LoginPage />}></Route>
+          <Route path="/login" element={<LoginPage />}></Route>
+          <Route path="/test" element={<TestPage />}></Route>
+          <Route path="/admin/:adminType/:aadharUID" element={<AdminPage />} />
+          {/* <Route path="/admin" element={<AdminPage />}></Route> */}
+          <Route path="/logout" element={<HomePage />}></Route>
+          <Route
+            path="/get-case-details"
+            element={<GetCaseDetailsPage />}
+          ></Route>
+          <Route path="/case-details" element={<CaseDetailsPage />}></Route>
+          <Route
+            path="/admin/register-new-case"
+            element={<RegisterNewLegalCasePage />}
+          ></Route>
+          <Route
+            path="/admin/casedetails"
+            element={<CaseDetailsComponent />}
+          ></Route>
+        </Routes>
+
+        <Footer />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) > count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
