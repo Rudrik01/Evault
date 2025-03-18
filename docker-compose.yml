@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend-vite/Dockerfile
+      args:
+        - BLOCKCHAIN_ARTIFACTS_PATH=/blockchain-hardhat/artifacts
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+      - VITE_BACKEND_URL=http://backend:3000
+      - VITE_BLOCKCHAIN_URL=http://blockchain-node:8545
+    volumes:
+      - blockchain_artifacts:/blockchain-hardhat/artifacts:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      blockchain-deploy:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - BLOCKCHAIN_URL=http://blockchain-node:8545
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - blockchain_artifacts:/blockchain-hardhat/artifacts:ro
+    depends_on:
+      blockchain-deploy:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  blockchain-node:
+    build:
+      context: ./blockchain-hardhat
+      dockerfile: Dockerfile
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./blockchain-hardhat:/app
+      - /app/node_modules
+      - blockchain_artifacts:/app/artifacts
+    environment:
+      - HARDHAT_NETWORK=localhost
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: ["./start-node.sh"]
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  blockchain-deploy:
+    build:
+      context: ./blockchain-hardhat
+      dockerfile: Dockerfile
+    volumes:
+      - ./blockchain-hardhat:/app
+      - /app/node_modules
+      - blockchain_artifacts:/app/artifacts
+    environment:
+      - HARDHAT_NETWORK=localhost
+    command: ["./deploy.sh"]
+    depends_on:
+      blockchain-node:
+        condition: service_healthy
+
+  # Development service for frontend hot-reloading
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: frontend-vite/Dockerfile
+      target: build
+      args:
+        - BLOCKCHAIN_ARTIFACTS_PATH=/blockchain-hardhat/artifacts
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend-vite:/app
+      - /app/node_modules
+      - blockchain_artifacts:/blockchain-hardhat/artifacts:ro
+    environment:
+      - NODE_ENV=development
+      - VITE_BACKEND_URL=http://backend:3000
+      - VITE_BLOCKCHAIN_URL=http://blockchain-node:8545
+    command: npm run dev -- --host
+    depends_on:
+      backend:
+        condition: service_healthy
+      blockchain-deploy:
+        condition: service_completed_successfully
+
+volumes:
+  blockchain_artifacts: 
